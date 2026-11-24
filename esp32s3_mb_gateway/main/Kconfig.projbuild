@@ -1,0 +1,98 @@
+menu "Modbus-RTU Gateway"
+
+    config MB_UART_PORT
+        int "UART port number (0..2)"
+        range 0 2
+        default 1
+        help
+            ESP32-S3 有三个 UART，建议用 UART1 或 UART2，避免占用 UART0（日志口）。
+
+    config MB_PIN_TX
+        int "RS485 module DI  -> GPIO"
+        default 17
+
+    config MB_PIN_RX
+        int "RS485 module RO  -> GPIO"
+        default 18
+
+    config MB_PIN_RTS
+        int "RS485 DE/RE -> GPIO (-1 = auto-direction transceiver)"
+        default 16
+        help
+            普通 MAX485/SP485 模块：DE 与 /RE 短接后接该 GPIO，由 UART 硬件 RTS
+            自动控制方向。
+            使用自动方向收发器（MAX13487 等）时填 -1，跳过 RS485 半双工模式。
+
+    config MB_BAUD
+        int "Baud rate"
+        default 9600
+        help
+            数据位固定 8、无校验、1 位停止位（8N1）。必须与从站设备一致。
+
+    config MB_SLAVE_ADDR
+        int "Slave address (1..247)"
+        range 1 247
+        default 1
+
+    config MB_FUNCTION_CODE
+        int "Function code (3 = holding, 4 = input)"
+        range 3 4
+        default 3
+
+    config MB_REG_START
+        int "Start register (protocol address, 0-based)"
+        default 0
+        help
+            Modbus 协议地址。手册写 40001~40125 时，此处填 0；
+            手册写寄存器 1~125 且是 1-based 时，此处同样填 0。
+
+    config MB_REG_COUNT
+        int "Register count per poll (1..125)"
+        range 1 125
+        default 125
+        help
+            FC03/FC04 单次读取上限为 125 个寄存器。
+
+    config MB_POLL_PERIOD_S
+        int "Poll period in seconds"
+        range 1 3600
+        default 30
+
+    menu "Network & Upload"
+
+        config APP_WIFI_ENABLE
+            bool "Enable WiFi + MQTT upload (stage 2)"
+            default n
+            help
+                关闭时固件只做 Modbus 采集 + 串口打印，用于第一步验证硬件接线。
+
+        config APP_WIFI_SSID
+            string "WiFi SSID"
+            default "myssid"
+
+        config APP_WIFI_PASSWORD
+            string "WiFi password"
+            default "mypassword"
+
+        config APP_MQTT_URI
+            string "MQTT broker URI"
+            default "mqtt://broker.emqx.io:1883"
+
+        config APP_MQTT_USERNAME
+            string "MQTT username (empty = anonymous)"
+            default ""
+
+        config APP_MQTT_PASSWORD
+            string "MQTT password"
+            default ""
+
+        config APP_MQTT_TOPIC_PREFIX
+            string "MQTT topic prefix"
+            default "dev"
+            help
+                数据 topic: <prefix>/<deviceId>/data
+                状态 topic: <prefix>/<deviceId>/status (LWT, retain)
+
+    endmenu
+
+endmenu
